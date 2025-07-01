@@ -10,4 +10,4 @@ RUN mix local.hex --force && \
     mix local.rebar --force && \
     mix deps.get || true
 
-CMD ["elixir", "main.exs"]
+CMD ["mix", "run", "--no-halt"]

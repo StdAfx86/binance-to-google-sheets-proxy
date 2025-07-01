@@ -27,6 +27,7 @@ defmodule BtgsProxy.MixProject do
       # https://hexdocs.pm/http_proxy/readme.html
       # https://github.com/KazuCocoa/http_proxy
       # {:http_proxy, "~> 1.6"}
+      {:ssl_verify_fun, "~> 1.1"},
       {:plug_cowboy, "~> 2.6"},
       {:hackney, "~> 1.18"},
       {:exjsx, "~> 4.0.0"},

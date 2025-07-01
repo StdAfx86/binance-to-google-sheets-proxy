@@ -1,13 +1,11 @@
 FROM elixir:1.15-alpine
 
-# Устанавливаем нужные пакеты для сборки Erlang/Elixir зависимостей
 RUN apk add --no-cache \
     git \
     bash \
     curl \
     openssl-dev \
     erlang-dev \
-    erlang-ssl \
     build-base \
     make \
     gcc \

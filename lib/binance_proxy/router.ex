@@ -9,30 +9,38 @@ defmodule BinanceProxy.Router do
   @binance_base "https://api.binance.com"
 
   match _ do
-    # Прокси запрос к Binance API
-    url = @binance_base <> conn.request_path <> "?" <> (conn.query_string || "")
+    conn ->
+      # Формируем URL
+      url =
+        if conn.query_string == "" or conn.query_string == nil do
+          @binance_base <> conn.request_path
+        else
+          @binance_base <> conn.request_path <> "?" <> conn.query_string
+        end
 
-    headers =
-      conn.req_headers
-      |> Enum.filter(fn {k, _v} -> k in ["x-mbx-apikey", "content-type", "user-agent"] end)
+      headers =
+        conn.req_headers
+        |> Enum.filter(fn {k, _v} -> k in ["x-mbx-apikey", "content-type", "user-agent"] end)
 
-    method = conn.method |> String.downcase() |> String.to_atom()
+      method = conn.method |> String.downcase() |> String.to_atom()
 
-    body = read_body(conn)
+      body = read_body(conn)
 
-    case :hackney.request(method, url, headers, body, []) do
-      {:ok, status, resp_headers, client} ->
-        {:ok, resp_body} = :hackney.body(client)
+      case :hackney.request(method, url, headers, body, []) do
+        {:ok, status, resp_headers, client} ->
+          {:ok, resp_body} = :hackney.body(client)
 
-        resp_headers
-        |> Enum.each(fn {k, v} -> Plug.Conn.put_resp_header(conn, k, v) end)
+          # Аккумулируем заголовки в conn
+          conn = Enum.reduce(resp_headers, conn, fn {k, v}, acc -> 
+            Plug.Conn.put_resp_header(acc, k, v)
+          end)
 
-        send_resp(conn, status, resp_body)
+          send_resp(conn, status, resp_body)
 
-      {:error, reason} ->
-        Logger.error("Proxy error: #{inspect(reason)}")
-        send_resp(conn, 502, "Bad Gateway")
-    end
+        {:error, reason} ->
+          Logger.error("Proxy error: #{inspect(reason)}")
+          send_resp(conn, 502, "Bad Gateway")
+      end
   end
 
   defp read_body(conn) do

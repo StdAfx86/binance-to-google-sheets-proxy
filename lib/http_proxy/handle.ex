@@ -185,31 +185,41 @@ defmodule HttpProxy.Handle do
   end
 
   defp read_proxy({conn, req_body}, client) do
-    case :hackney.start_response(client) do
-      {:ok, status, headers, client} ->
-        Logger.debug(fn -> "request path: #{gen_path(conn, target_proxy(conn))}" end)
+      case :hackney.start_response(client) do
+        {:ok, status, headers, client} ->
+          Logger.debug(fn -> "request path: #{gen_path(conn, target_proxy(conn))}" end)
 
-        {:ok, res_body} = :hackney.body(client)
-        resp_headers = set_response_headers(headers, res_body)
+          {:ok, res_body} = :hackney.body(client)
+          resp_headers = set_response_headers(headers, res_body)
 
-        Logger.debug(fn ->
-          "#{__MODULE__}.read_proxy, :ok, headers: #{resp_headers |> JSX.encode!()}, status: #{status}"
-        end)
+          Logger.debug(fn ->
+            "#{__MODULE__}.read_proxy, :ok, headers: #{resp_headers |> JSX.encode!()}, status: #{status}"
+          end)
 
-        read_request(%{conn | resp_headers: resp_headers}, req_body, res_body, status)
+          read_request(%{conn | resp_headers: resp_headers}, req_body, res_body, status)
 
-      {:error, message} ->
-        Logger.debug(fn -> "request path: #{gen_path(conn, target_proxy(conn))}" end)
-        Logger.debug(fn -> "#{__MODULE__}.read_proxy, :error, message: #{message}" end)
+        {:ok, status, headers} when status in [301, 302] ->
+          location = Enum.find(headers, fn {h, _} -> String.downcase(h) == "location" end)
+          Logger.warn("Redirect (#{status}) to: #{inspect(location)}")
 
-        read_request(
-          %{conn | resp_headers: conn.resp_headers},
-          req_body,
-          Atom.to_string(message),
-          408
-        )
+          body = "Redirecting to #{inspect(location)}"
+          resp_headers = set_response_headers(headers, body)
+
+          read_request(%{conn | resp_headers: resp_headers}, req_body, body, status)
+
+        {:error, message} ->
+          Logger.debug(fn -> "request path: #{gen_path(conn, target_proxy(conn))}" end)
+          Logger.debug(fn -> "#{__MODULE__}.read_proxy, :error, message: #{message}" end)
+
+          read_request(
+            %{conn | resp_headers: conn.resp_headers},
+            req_body,
+            Atom.to_string(message),
+            408
+          )
+      end
     end
-  end
+
 
   defp read_request(conn, req_body, res_body, status) do
     cond do

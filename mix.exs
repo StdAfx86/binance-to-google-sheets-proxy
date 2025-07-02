@@ -13,6 +13,13 @@ defmodule BtgsProxy.MixProject do
     ]
   end
 
+    def application do
+      [
+        mod: {HttpProxy.Application, []},
+        extra_applications: [:logger, :hackney]
+      ]
+    end
+
   # Run "mix help compile.app" to learn about applications.
   def application do
     [

@@ -1,8 +1,10 @@
 import Config
 
 config :http_proxy,
+  http: [port: 80], # необязательно, если нужен только HTTPS
   https: [
     port: 443,
+    cipher_suite: :strong,
     keyfile: "priv/ssl/privkey.pem",
     certfile: "priv/ssl/fullchain.pem"
   ],

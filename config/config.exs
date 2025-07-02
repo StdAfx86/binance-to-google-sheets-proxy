@@ -1,7 +1,11 @@
 import Config
 
 config :http_proxy,
-  http: [port: 80],
+  https: [
+    port: 443,
+    keyfile: "priv/ssl/privkey.pem",
+    certfile: "priv/ssl/fullchain.pem"
+  ],
   proxies: [
     %{port: 5000, to: "https://api.binance.com/"},
     %{port: 5001, to: "https://api1.binance.com/"},

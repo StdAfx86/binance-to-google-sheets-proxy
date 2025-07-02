@@ -1,7 +1,7 @@
 import Config
 
 config :http_proxy,
-  https: true,
+  http: [port: 80],
   proxies: [
     %{port: 5000, to: "https://api.binance.com/"},
     %{port: 5001, to: "https://api1.binance.com/"},
